@@ -1,0 +1,76 @@
+name: site-remodel
+version: "1.0.0"
+description: Squad para remodelacao do site pessoal/profissional com Three.js 3D
+author: Lucas Rodrigues <lucasrodriiguesalves@gmail.com>
+repository: github.com/arltech/boost-your-brand
+
+stack:
+  core:
+    - Three.js v0.160.0 (ES modules via importmap)
+    - GSAP v3.12.5
+    - HTML/CSS/JS puro
+  future:
+    - Vercel (deploy)
+
+agents:
+  - id: webgl-dev
+    file: agents/webgl-dev.md
+    name: Vertex
+    role: Frontend 3D Engineer
+  - id: ux-designer
+    file: agents/ux-designer.md
+    name: Pixel
+    role: UX/UI Designer
+  - id: fullstack-dev
+    file: agents/fullstack-dev.md
+    name: Stack
+    role: Fullstack Developer
+  - id: qa
+    file: agents/qa.md
+    name: Shield
+    role: Quality Assurance
+
+tasks:
+  - id: create-page-sections
+    file: tasks/create-page-sections.md
+    agent: ux-designer
+    phase: 1
+  - id: setup-project-structure
+    file: tasks/setup-project-structure.md
+    agent: fullstack-dev
+    phase: 2
+  - id: implement-responsive
+    file: tasks/implement-responsive.md
+    agent: fullstack-dev
+    phase: 2
+  - id: enhance-3d-scene
+    file: tasks/enhance-3d-scene.md
+    agent: webgl-dev
+    phase: 3
+  - id: add-page-transitions
+    file: tasks/add-page-transitions.md
+    agent: webgl-dev
+    phase: 3
+  - id: performance-audit
+    file: tasks/performance-audit.md
+    agent: qa
+    phase: 4
+  - id: cross-browser-test
+    file: tasks/cross-browser-test.md
+    agent: qa
+    phase: 4
+
+workflow:
+  phases:
+    - name: Design
+      phase: 1
+      description: Definir secoes, layout e user flow
+    - name: Estrutura
+      phase: 2
+      description: Modularizar projeto, responsividade
+    - name: 3D
+      phase: 3
+      description: Cenas Three.js, modelos GLTF, transicoes
+    - name: Qualidade
+      phase: 4
+      description: Auditoria de performance e cross-browser
