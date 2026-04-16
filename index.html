@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boost Your Brand - 3D Particle Morphing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- GSAP para animações de morphing suaves -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+    <!-- Three.js ES Modules via Import Map -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body, html {
+            width: 100%; height: 100%; overflow: hidden;
+            background-color: #050505; color: #fff;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        #canvas-container {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 1;
+        }
+
+        main {
+            position: relative; z-index: 2;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            height: 100%; text-align: center;
+            pointer-events: none; padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 6rem; font-weight: 900;
+            text-transform: uppercase; letter-spacing: -2px;
+            margin-bottom: 20px; line-height: 1;
+            text-shadow: 0 0 60px rgba(52, 152, 219, 0.3);
+        }
+
+        p {
+            font-size: 1.2rem; max-width: 600px;
+            line-height: 1.6; font-weight: 400; opacity: 0.85;
+        }
+
+        .agency-logo {
+            position: absolute; bottom: 30px; left: 50%;
+            transform: translateX(-50%); z-index: 2;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .logo-mark {
+            width: 20px; height: 20px;
+            background: linear-gradient(135deg, #f3a02a 0%, #3498db 100%);
+            border-radius: 50%;
+        }
+
+        .logo-text {
+            font-size: 1.2rem; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+
+        footer {
+            position: absolute; bottom: 30px; left: 0;
+            width: 100%; display: flex; justify-content: space-between;
+            padding: 0 50px; font-size: 0.9rem; opacity: 0.7; z-index: 2;
+        }
+
+        footer a { color: #fff; text-decoration: none; transition: opacity 0.3s; }
+        footer a:hover { opacity: 1; }
+        footer .contact-info {
+            display: flex; flex-direction: column; gap: 5px; text-align: right;
+        }
+
+        /* Botao de morph */
+        #morph-btn {
+            position: fixed; bottom: 85px; left: 50%;
+            transform: translateX(-50%); z-index: 10;
+            padding: 12px 32px;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            color: #fff; font-family: 'Montserrat', sans-serif;
+            font-size: 0.8rem; font-weight: 700; letter-spacing: 3px;
+            text-transform: uppercase; cursor: pointer;
+            transition: all 0.3s ease; border-radius: 30px;
+        }
+
+        #morph-btn:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(243, 160, 42, 0.7);
+            box-shadow: 0 0 25px rgba(243, 160, 42, 0.15);
+        }
+
+        /* Indicador de forma */
+        #shape-label {
+            position: fixed; top: 30px; right: 40px; z-index: 10;
+            font-size: 0.7rem; letter-spacing: 2px;
+            text-transform: uppercase; opacity: 0.35;
+        }
+
+        /* Loading */
+        #loader {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: #050505;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 100; transition: opacity 0.8s ease;
+        }
+        #loader.hidden { opacity: 0; pointer-events: none; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 2px solid rgba(255,255,255,0.08);
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        #loader p {
+            margin-top: 15px; font-size: 0.75rem;
+            opacity: 0.4; letter-spacing: 3px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <p>CARREGANDO 3D</p>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <main>
+        <h1>BOOST YOUR BRAND</h1>
+        <p>We create digital experiences at the intersection of design and technology, helping our clients to imagine the future today.</p>
+    </main>
+
+    <div class="agency-logo">
+        <div class="logo-mark"></div>
+        <span class="logo-text">INFOGRAFICOMPANIES</span>
+    </div>
+
+    <footer>
+        <div>
+            <a href="mailto:hello@usta.agency">hello@usta.agency</a>
+            <div>&copy; 2024 Usta</div>
+        </div>
+        <div class="contact-info">
+            <div>Bologna - Via Volta, 11</div>
+            <div>Modena - Via Ciro Menotti, 160</div>
+        </div>
+    </footer>
+
+    <button id="morph-btn">&#9672; MORPH</button>
+    <div id="shape-label">Esfera</div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+        // =========================================================
+        //  CONFIGURACAO DA CENA
+        // =========================================================
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+            75, window.innerWidth / window.innerHeight, 0.1, 1000
+        );
+        camera.position.z = 25;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // =========================================================
+        //  SISTEMA DE PARTICULAS
+        // =========================================================
+        const PARTICLE_COUNT = 10000;
+
+        // Posicoes e cores para cada forma
+        const currentPositions  = new Float32Array(PARTICLE_COUNT * 3);
+        const spherePositions   = new Float32Array(PARTICLE_COUNT * 3);
+        let   astronautPositions = new Float32Array(PARTICLE_COUNT * 3);
+
+        const currentColors     = new Float32Array(PARTICLE_COUNT * 3);
+        const sphereColors      = new Float32Array(PARTICLE_COUNT * 3);
+        const astronautColors   = new Float32Array(PARTICLE_COUNT * 3);
+
+        // Velocidades aleatorias para efeito de dispersao no morph
+        const velocities = new Float32Array(PARTICLE_COUNT * 3);
+
+        const colorGold = new THREE.Color('#f3a02a');
+        const colorBlue = new THREE.Color('#3498db');
+
+        // =========================================================
+        //  FORMA 1 — ESFERA (GLOBO)
+        // =========================================================
+        function generateSpherePositions(radius = 10) {
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                // Distribuicao de Fibonacci na esfera
+                const phi   = Math.acos(-1 + (2 * i) / PARTICLE_COUNT);
+                const theta = Math.sqrt(PARTICLE_COUNT * Math.PI) * phi;
+                const i3 = i * 3;
+
+                spherePositions[i3]     = radius * Math.cos(theta) * Math.sin(phi);
+                spherePositions[i3 + 1] = radius * Math.sin(theta) * Math.sin(phi);
+                spherePositions[i3 + 2] = radius * Math.cos(phi);
+
+                // Cor: gradiente ouro-azul aleatorio
+                const c = colorGold.clone().lerp(colorBlue, Math.random());
+                sphereColors[i3]     = c.r;
+                sphereColors[i3 + 1] = c.g;
+                sphereColors[i3 + 2] = c.b;
+            }
+        }
+
+        // =========================================================
+        //  FORMA 2 — ASTRONAUTA (FALLBACK GEOMETRICO)
+        //  Funciona sem nenhum arquivo externo.
+        //  Sera substituido se um .glb/.gltf/.obj for carregado.
+        // =========================================================
+        function generateAstronautFallback(scale = 5) {
+            const verts = [];
+
+            // Helpers para gerar pontos na superficie de primitivas
+            function sphereVerts(cx, cy, cz, r, n) {
+                for (let i = 0; i < n; i++) {
+                    const phi   = Math.acos(-1 + (2 * i) / n);
+                    const theta = Math.sqrt(n * Math.PI) * phi;
+                    verts.push(
+                        cx + r * Math.cos(theta) * Math.sin(phi),
+                        cy + r * Math.sin(theta) * Math.sin(phi),
+                        cz + r * Math.cos(phi)
+                    );
+                }
+            }
+
+            function boxVerts(cx, cy, cz, w, h, d, n) {
+                for (let i = 0; i < n; i++) {
+                    const face = Math.floor(Math.random() * 6);
+                    let x, y, z;
+                    switch (face) {
+                        case 0: x =  w/2; y = (Math.random()-0.5)*h; z = (Math.random()-0.5)*d; break;
+                        case 1: x = -w/2; y = (Math.random()-0.5)*h; z = (Math.random()-0.5)*d; break;
+                        case 2: y =  h/2; x = (Math.random()-0.5)*w; z = (Math.random()-0.5)*d; break;
+                        case 3: y = -h/2; x = (Math.random()-0.5)*w; z = (Math.random()-0.5)*d; break;
+                        case 4: z =  d/2; x = (Math.random()-0.5)*w; y = (Math.random()-0.5)*h; break;
+                        case 5: z = -d/2; x = (Math.random()-0.5)*w; y = (Math.random()-0.5)*h; break;
+                    }
+                    verts.push(cx + x, cy + y, cz + z);
+                }
+            }
+
+            function cylinderVerts(cx, cy, cz, r, h, n) {
+                for (let i = 0; i < n; i++) {
+                    const a = Math.random() * Math.PI * 2;
+                    verts.push(
+                        cx + r * Math.cos(a),
+                        cy + (Math.random() - 0.5) * h,
+                        cz + r * Math.sin(a)
+                    );
+                }
+            }
+
+            function torusVerts(cx, cy, cz, R, r, n) {
+                for (let i = 0; i < n; i++) {
+                    const a = (i / n) * Math.PI * 2;
+                    const b = Math.random() * Math.PI * 2;
+                    verts.push(
+                        cx + (R + r * Math.cos(b)) * Math.cos(a),
+                        cy + r * Math.sin(b),
+                        cz + (R + r * Math.cos(b)) * Math.sin(a)
+                    );
+                }
+            }
+
+            // --- Capacete ---
+            sphereVerts(0, 3.2, 0, 1.35, 2000);
+
+            // --- Visor (meia esfera frontal, cor dourada) ---
+            for (let i = 0; i < 600; i++) {
+                const phi   = Math.random() * Math.PI * 0.42;
+                const theta = Math.random() * Math.PI * 2;
+                const r = 1.18;
+                verts.push(
+                    r * Math.sin(phi) * Math.cos(theta),
+                    3.35 + r * Math.cos(phi) * 0.3,
+                    r * Math.sin(phi) * Math.sin(theta) + 0.55
+                );
+            }
+
+            // --- Anel do capacete ---
+            torusVerts(0, 2.1, 0, 1.2, 0.08, 350);
+
+            // --- Torso ---
+            boxVerts(0, 0.8, 0, 2.2, 2.8, 1.4, 2200);
+
+            // --- Painel do peito ---
+            boxVerts(0, 1.5, 0.73, 0.85, 0.55, 0.04, 250);
+
+            // --- Mochila (Life Support System) ---
+            boxVerts(0, 1.2, -1.1, 1.8, 2.2, 0.7, 900);
+            cylinderVerts(-0.5, 1.8, -1.5, 0.14, 0.9, 150);
+            cylinderVerts( 0.5, 1.8, -1.5, 0.14, 0.9, 150);
+
+            // --- Braco esquerdo ---
+            cylinderVerts(-1.55, 1.0, 0, 0.33, 1.4, 350);   // ombro
+            cylinderVerts(-1.65, -0.1, 0.1, 0.30, 1.4, 300); // antebraco
+            sphereVerts(-1.7, -0.7, 0.15, 0.24, 200);        // luva
+
+            // --- Braco direito ---
+            cylinderVerts(1.55, 1.0, 0, 0.33, 1.4, 350);
+            cylinderVerts(1.65, -0.1, 0.1, 0.30, 1.4, 300);
+            sphereVerts(1.7, -0.7, 0.15, 0.24, 200);
+
+            // --- Perna esquerda ---
+            cylinderVerts(-0.55, -1.8, 0, 0.38, 2.8, 500);
+            boxVerts(-0.55, -3.4, 0.15, 0.5, 0.35, 0.7, 180);
+
+            // --- Perna direita ---
+            cylinderVerts(0.55, -1.8, 0, 0.38, 2.8, 500);
+            boxVerts(0.55, -3.4, 0.15, 0.5, 0.35, 0.7, 180);
+
+            // --- Cinto ---
+            boxVerts(0, -0.1, 0, 2.3, 0.25, 1.5, 200);
+
+            // --- Antena ---
+            cylinderVerts(0.35, 4.1, -0.25, 0.04, 0.9, 90);
+            sphereVerts(0.35, 4.6, -0.25, 0.08, 50);
+
+            // Redistribuir para PARTICLE_COUNT
+            const totalVerts = verts.length / 3;
+            const s = scale / 10;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const idx = (i % totalVerts) * 3;
+                const jitter = i >= totalVerts ? 0.04 : 0;
+                const i3 = i * 3;
+                astronautPositions[i3]     = verts[idx]     * s + (Math.random() - 0.5) * jitter;
+                astronautPositions[i3 + 1] = verts[idx + 1] * s + (Math.random() - 0.5) * jitter;
+                astronautPositions[i3 + 2] = verts[idx + 2] * s + (Math.random() - 0.5) * jitter;
+
+                // Cor: branco com leve tom azulado
+                const b = 0.7 + Math.random() * 0.3;
+                astronautColors[i3]     = b * 0.95;
+                astronautColors[i3 + 1] = b;
+                astronautColors[i3 + 2] = Math.min(b * 1.15, 1.0);
+            }
+        }
+
+        // =========================================================
+        //  CARREGAR MODELO EXTERNO (GLTF / OBJ)
+        // =========================================================
+
+        /**
+         * Extrai todos os vertices de um Object3D carregado,
+         * centraliza, escala e redistribui para targetCount particulas.
+         */
+        function extractModelPositions(object3d, targetCount, targetScale = 10) {
+            const allVertices = [];
+
+            object3d.traverse((child) => {
+                if (child.isMesh && child.geometry) {
+                    const posAttr = child.geometry.attributes.position;
+                    child.updateWorldMatrix(true, false);
+                    const matrix = child.matrixWorld;
+
+                    for (let i = 0; i < posAttr.count; i++) {
+                        const v = new THREE.Vector3(
+                            posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i)
+                        );
+                        v.applyMatrix4(matrix);
+                        allVertices.push(v);
+                    }
+                }
+            });
+
+            if (allVertices.length === 0) return null;
+
+            // Centralizar e escalar para caber na cena
+            const box = new THREE.Box3();
+            allVertices.forEach(v => box.expandByPoint(v));
+            const center = box.getCenter(new THREE.Vector3());
+            const size   = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const sf     = targetScale / maxDim;
+
+            allVertices.forEach(v => v.sub(center).multiplyScalar(sf));
+
+            // Redistribuir para targetCount particulas
+            const result = new Float32Array(targetCount * 3);
+            const total  = allVertices.length;
+
+            for (let i = 0; i < targetCount; i++) {
+                const idx = i % total;
+                const v   = allVertices[idx];
+                const jitter = i >= total ? 0.06 : 0;
+                result[i * 3]     = v.x + (Math.random() - 0.5) * jitter;
+                result[i * 3 + 1] = v.y + (Math.random() - 0.5) * jitter;
+                result[i * 3 + 2] = v.z + (Math.random() - 0.5) * jitter;
+            }
+
+            return result;
+        }
+
+        const gltfLoader = new GLTFLoader();
+        const objLoader  = new OBJLoader();
+
+        // ==============================================================
+        //  COMO USAR UM MODELO EXTERNO:
+        //
+        //  1. Baixe um modelo .glb ou .gltf de astronauta:
+        //     - Sketchfab (filtro Creative Commons):
+        //       https://sketchfab.com/search?q=astronaut&type=models
+        //     - Poly Pizza (gratuitos):
+        //       https://poly.pizza/search/astronaut
+        //     - NASA 3D Resources:
+        //       https://nasa3d.arc.nasa.gov/models
+        //
+        //  2. Coloque o arquivo .glb/.gltf na MESMA PASTA deste HTML.
+        //
+        //  3. IMPORTANTE: voce precisa de um servidor HTTP local!
+        //     O navegador bloqueia carregamento de arquivos via file://.
+        //     Use um destes comandos no terminal:
+        //
+        //       Python:  python3 -m http.server 8000
+        //       Node:    npx serve .
+        //       PHP:     php -S localhost:8000
+        //
+        //     Depois abra http://localhost:8000/boost-your-brand.html
+        //
+        //  4. Descomente UMA das linhas abaixo com o nome do seu arquivo:
+        // ==============================================================
+
+        // loadGLTFModel('astronaut.glb');
+        // loadGLTFModel('astronaut.gltf');
+        // loadOBJModel('astronaut.obj');
+
+        function loadGLTFModel(path) {
+            gltfLoader.load(
+                path,
+                (gltf) => {
+                    console.log('[OK] Modelo GLTF carregado:', path);
+                    const positions = extractModelPositions(gltf.scene, PARTICLE_COUNT, 12);
+                    if (positions) {
+                        astronautPositions = positions;
+                        for (let i = 0; i < PARTICLE_COUNT; i++) {
+                            const i3 = i * 3;
+                            const b = 0.7 + Math.random() * 0.3;
+                            astronautColors[i3]     = b * 0.95;
+                            astronautColors[i3 + 1] = b;
+                            astronautColors[i3 + 2] = Math.min(b * 1.15, 1.0);
+                        }
+                        console.log('[OK] Vertices extraidos e redistribuidos para', PARTICLE_COUNT, 'particulas');
+                    }
+                },
+                (progress) => {
+                    if (progress.total) {
+                        console.log('[...] Carregando:', Math.round(progress.loaded / progress.total * 100) + '%');
+                    }
+                },
+                (error) => {
+                    console.warn('[!] Erro ao carregar GLTF, usando astronauta geometrico:', error.message);
+                }
+            );
+        }
+
+        function loadOBJModel(path) {
+            objLoader.load(
+                path,
+                (obj) => {
+                    console.log('[OK] Modelo OBJ carregado:', path);
+                    const positions = extractModelPositions(obj, PARTICLE_COUNT, 12);
+                    if (positions) {
+                        astronautPositions = positions;
+                        for (let i = 0; i < PARTICLE_COUNT; i++) {
+                            const i3 = i * 3;
+                            const b = 0.7 + Math.random() * 0.3;
+                            astronautColors[i3]     = b * 0.95;
+                            astronautColors[i3 + 1] = b;
+                            astronautColors[i3 + 2] = Math.min(b * 1.15, 1.0);
+                        }
+                    }
+                },
+                undefined,
+                (error) => {
+                    console.warn('[!] Erro ao carregar OBJ, usando fallback:', error.message);
+                }
+            );
+        }
+
+        // =========================================================
+        //  INICIALIZAR FORMAS
+        // =========================================================
+        generateSpherePositions();
+        generateAstronautFallback();
+
+        // Comecar com a esfera
+        currentPositions.set(spherePositions);
+        currentColors.set(sphereColors);
+
+        // Criar geometria de particulas
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
+        geometry.setAttribute('color',    new THREE.BufferAttribute(currentColors, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.15,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true,
+            depthWrite: false,
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        // =========================================================
+        //  ESTRELAS DE FUNDO
+        // =========================================================
+        const starCount = 1500;
+        const starsGeo  = new THREE.BufferGeometry();
+        const starPos   = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i++) {
+            starPos[i] = (Math.random() - 0.5) * 200;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const stars = new THREE.Points(starsGeo, new THREE.PointsMaterial({
+            color: 0xffffff, size: 0.2,
+            transparent: true, opacity: 0.5, sizeAttenuation: true,
+        }));
+        scene.add(stars);
+
+        // =========================================================
+        //  MORPHING COM GSAP
+        // =========================================================
+        const morphState = { progress: 0 };
+        let currentShape = 'sphere'; // 'sphere' | 'astronaut'
+        let isMorphing   = false;
+
+        function morphTo(target) {
+            if (isMorphing) return;
+            isMorphing = true;
+
+            const fromPos = target === 'astronaut' ? spherePositions   : astronautPositions;
+            const toPos   = target === 'astronaut' ? astronautPositions : spherePositions;
+            const fromCol = target === 'astronaut' ? sphereColors      : astronautColors;
+            const toCol   = target === 'astronaut' ? astronautColors   : sphereColors;
+
+            // Gerar velocidades aleatorias para efeito de dispersao
+            for (let i = 0; i < PARTICLE_COUNT * 3; i++) {
+                velocities[i] = (Math.random() - 0.5) * 8;
+            }
+
+            morphState.progress = 0;
+
+            gsap.to(morphState, {
+                progress: 1,
+                duration: 3,
+                ease: 'power3.inOut',
+                onUpdate() {
+                    const t   = morphState.progress;
+                    const pos = geometry.attributes.position.array;
+                    const col = geometry.attributes.color.array;
+
+                    // Dispersao maxima no meio da transicao (t=0.5)
+                    const scatter = Math.sin(t * Math.PI) * 0.35;
+
+                    for (let i = 0; i < PARTICLE_COUNT * 3; i++) {
+                        pos[i] = fromPos[i] + (toPos[i] - fromPos[i]) * t
+                                 + velocities[i] * scatter;
+                        col[i] = fromCol[i] + (toCol[i] - fromCol[i]) * t;
+                    }
+
+                    geometry.attributes.position.needsUpdate = true;
+                    geometry.attributes.color.needsUpdate    = true;
+                },
+                onComplete() {
+                    currentShape = target;
+                    isMorphing   = false;
+                    document.getElementById('shape-label').textContent =
+                        target === 'astronaut' ? 'Astronauta' : 'Esfera';
+                }
+            });
+        }
+
+        function toggleMorph() {
+            morphTo(currentShape === 'sphere' ? 'astronaut' : 'sphere');
+        }
+
+        // =========================================================
+        //  CONTROLES (botao + tecla espaco)
+        // =========================================================
+        let autoMorphTimer   = setInterval(toggleMorph, 8000);
+        let autoResumeTimer  = null;
+
+        function onUserMorph() {
+            toggleMorph();
+            // Pausar auto-morph e retomar apos 20s de inatividade
+            clearInterval(autoMorphTimer);
+            clearTimeout(autoResumeTimer);
+            autoResumeTimer = setTimeout(() => {
+                autoMorphTimer = setInterval(toggleMorph, 8000);
+            }, 20000);
+        }
+
+        document.getElementById('morph-btn').addEventListener('click', onUserMorph);
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') { e.preventDefault(); onUserMorph(); }
+        });
+
+        // =========================================================
+        //  MOUSE PARALLAX
+        // =========================================================
+        let mouseX = 0, mouseY = 0;
+        let targetMX = 0, targetMY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            targetMX =  (e.clientX / window.innerWidth)  * 2 - 1;
+            targetMY = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // =========================================================
+        //  LOOP DE ANIMACAO
+        // =========================================================
+        const clock = new THREE.Clock();
+
+        // Ocultar loader
+        setTimeout(() => document.getElementById('loader').classList.add('hidden'), 1200);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsed = clock.getElapsedTime();
+
+            // Suavizar mouse
+            mouseX += (targetMX - mouseX) * 0.05;
+            mouseY += (targetMY - mouseY) * 0.05;
+
+            // Rotacao suave das particulas
+            particles.rotation.y += 0.002;
+            particles.rotation.x  = Math.sin(elapsed * 0.2) * 0.08;
+
+            // Parallax da camera
+            camera.position.x += (mouseX * 5 - camera.position.x) * 0.04;
+            camera.position.y += (mouseY * 3 - camera.position.y) * 0.04;
+            camera.lookAt(0, 0, 0);
+
+            // Estrelas
+            stars.rotation.y = elapsed * 0.005;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // =========================================================
+        //  RESIZE
+        // =========================================================
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
